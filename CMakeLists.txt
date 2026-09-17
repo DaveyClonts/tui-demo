@@ -2,6 +2,9 @@ cmake_minimum_required(VERSION 3.20)
 
 project(ftxui_split_demo LANGUAGES CXX)
 
+# Keep editor language servers in sync with the real CMake build.
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
 include(FetchContent)
 
 FetchContent_Declare(
@@ -15,4 +18,3 @@ FetchContent_MakeAvailable(ftxui)
 add_executable(ftxui_split_demo src/main.cpp)
 target_compile_features(ftxui_split_demo PRIVATE cxx_std_17)
 target_link_libraries(ftxui_split_demo PRIVATE ftxui::ftxui)
-

@@ -10,14 +10,14 @@ int main() {
 
   auto layout = Renderer([&] {
     auto top_pane = vbox({
-                        text(" TOP PANE - 75% ") | bold | center,
+                        text(" Editor ") | bold | center,
                         separator(),
                         text("Main content") | center,
                     }) |
-                    border | yflex_grow_factor(3);
+                    border | yflex_grow_factor(5);
 
     auto bottom_pane = vbox({
-                           text(" BOTTOM PANE - 25% ") | bold | center,
+                           text(" Terminal ") | bold | center,
                            separator(),
                            text("Press Q or Esc to quit") | dim | center,
                        }) |
