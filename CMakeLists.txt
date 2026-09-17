@@ -15,6 +15,9 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(ftxui)
 
-add_executable(ftxui_split_demo src/main.cpp)
+add_executable(ftxui_split_demo
+  src/layout.cpp
+  src/main.cpp
+)
 target_compile_features(ftxui_split_demo PRIVATE cxx_std_17)
 target_link_libraries(ftxui_split_demo PRIVATE ftxui::ftxui)

@@ -1,33 +1,15 @@
 #include <ftxui/component/component.hpp>
 #include <ftxui/component/event.hpp>
 #include <ftxui/component/screen_interactive.hpp>
-#include <ftxui/dom/elements.hpp>
+
+#include "layout.hpp"
 
 int main() {
   using namespace ftxui;
 
   auto screen = ScreenInteractive::Fullscreen();
 
-  auto layout = Renderer([&] {
-    auto top_pane = vbox({
-                        text(" Editor ") | bold | center,
-                        separator(),
-                        text("Main content") | center,
-                    }) |
-                    border | yflex_grow_factor(5);
-
-    auto bottom_pane = vbox({
-                           text(" Terminal ") | bold | center,
-                           separator(),
-                           text("Press Q or Esc to quit") | dim | center,
-                       }) |
-                       border | yflex_grow_factor(1);
-
-    return vbox({
-        top_pane,
-        bottom_pane,
-    });
-  });
+  auto layout = Renderer(tui_demo::BuildLayout);
 
   auto app = CatchEvent(layout, [&](Event event) {
     if (event == Event::Character('q') || event == Event::Character('Q') ||
