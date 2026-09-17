@@ -7,17 +7,17 @@ namespace tui_demo {
 ftxui::Element BuildLayout() {
   using namespace ftxui;
 
-  auto left_pane = emptyElement() | borderLight | xflex_grow_factor(15) |
+  auto left_pane = emptyElement() | border | xflex_grow_factor(15) |
                    yflex;
 
-  auto top_pane = emptyElement() | borderLight | yflex_grow_factor(5);
+  auto top_pane = emptyElement() | border | yflex_grow_factor(5);
 
   auto bottom_pane = vbox({
                          text(" Terminal ") | bold | center,
                          separator(),
                          text("Press Q or Esc to quit") | dim | center,
                      }) |
-                     borderLight | yflex_grow_factor(1);
+                     border | yflex_grow_factor(1);
 
   auto right_pane = vbox({
                         top_pane,
