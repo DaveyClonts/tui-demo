@@ -18,8 +18,10 @@ FetchContent_MakeAvailable(ftxui)
 add_executable(edit_tui
   src/application.cpp
   src/editor/editor.cpp
-  src/layout.cpp
+  src/tui/tui.cpp
+  src/tui/renderer/renderer.cpp
   src/main.cpp
 )
 target_compile_features(edit_tui PRIVATE cxx_std_17)
+target_include_directories(edit_tui PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/src")
 target_link_libraries(edit_tui PRIVATE ftxui::ftxui)

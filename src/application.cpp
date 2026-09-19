@@ -5,7 +5,7 @@
 #include <ftxui/component/screen_interactive.hpp>
 
 #include "editor/editor.hpp"
-#include "layout.hpp"
+#include "tui/tui.hpp"
 
 namespace tui_demo {
 
@@ -15,9 +15,9 @@ int RunApplication() {
   auto screen = ScreenInteractive::Fullscreen();
   Editor editor;
 
-  auto layout = Renderer([&] { return BuildLayout(editor); });
+  auto view = Renderer([&] { return BuildTui(editor); });
 
-  auto app = CatchEvent(layout, [&](Event event) {
+  auto app = CatchEvent(view, [&](Event event) {
     if (event == Event::Escape) {
       screen.ExitLoopClosure()();
       return true;
