@@ -1,4 +1,4 @@
-#include "tui/renderer/renderer.hpp"
+#include "renderer/renderer.hpp"
 
 #include <algorithm>
 #include <optional>

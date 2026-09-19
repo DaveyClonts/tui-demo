@@ -6,7 +6,7 @@
 #include <algorithm>
 
 #include "editor/editor.hpp"
-#include "tui/renderer/renderer.hpp"
+#include "renderer/renderer.hpp"
 
 namespace tui_demo {
 

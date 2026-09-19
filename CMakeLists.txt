@@ -19,7 +19,7 @@ add_executable(edit_tui
   src/application.cpp
   src/editor/editor.cpp
   src/tui/tui.cpp
-  src/tui/renderer/renderer.cpp
+  src/renderer/renderer.cpp
   src/main.cpp
 )
 target_compile_features(edit_tui PRIVATE cxx_std_17)
