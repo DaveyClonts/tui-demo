@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.20)
 
-project(ftxui_split_demo LANGUAGES CXX)
+project(edit_tui LANGUAGES CXX)
 
 # Keep editor language servers in sync with the real CMake build.
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
@@ -15,9 +15,11 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(ftxui)
 
-add_executable(ftxui_split_demo
+add_executable(edit_tui
+  src/application.cpp
+  src/editor/editor.cpp
   src/layout.cpp
   src/main.cpp
 )
-target_compile_features(ftxui_split_demo PRIVATE cxx_std_17)
-target_link_libraries(ftxui_split_demo PRIVATE ftxui::ftxui)
+target_compile_features(edit_tui PRIVATE cxx_std_17)
+target_link_libraries(edit_tui PRIVATE ftxui::ftxui)

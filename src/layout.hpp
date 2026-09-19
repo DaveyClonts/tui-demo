@@ -4,7 +4,8 @@
 
 namespace tui_demo {
 
-ftxui::Element BuildLayout();
+class Editor;
+
+ftxui::Element BuildLayout(const Editor& editor);
 
 }  // namespace tui_demo
-
