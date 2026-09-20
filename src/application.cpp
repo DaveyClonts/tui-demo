@@ -4,82 +4,52 @@
 #include <ftxui/component/event.hpp>
 #include <ftxui/component/screen_interactive.hpp>
 
+#include <iostream>
+
+#include "commands/dispatcher.hpp"
 #include "editor/editor.hpp"
+#include "input/keymap.hpp"
 #include "tui/tui.hpp"
 
 namespace tui_demo {
 
-int RunApplication() {
+int RunApplication(std::optional<std::filesystem::path> initial_path) {
   using namespace ftxui;
 
-  auto screen = ScreenInteractive::Fullscreen();
   Editor editor;
+  CommandDispatcher dispatcher(editor);
+  // Report startup errors before entering fullscreen so they remain visible in the shell.
+  if (initial_path) {
+    const auto result = dispatcher.Dispatch(OpenCommand{*initial_path});
+    if (!result.ok()) {
+      std::cerr << "open " << *initial_path << ": " << result.message << '\n';
+      return 1;
+    }
+  }
+
+  auto screen = ScreenInteractive::Fullscreen();
+  Keymap keymap;
+  std::string status_message;
 
   // Rebuild the view from current editor state whenever FTXUI draws a frame.
-  auto view = Renderer([&] { return BuildTui(editor); });
+  auto view = Renderer([&] { return BuildTui(editor, status_message); });
 
-  // Translate terminal input into editor operations. true consumes an event;
-  // false lets FTXUI pass an unhandled event to the wrapped component.
+  // Input dispatch reports quit separately so the application owns screen lifetime.
   auto app = CatchEvent(view, [&](Event event) {
-    if (event == Event::Escape) {
+    const auto result = HandleInput(event, keymap, editor);
+    if (result == InputResult::Save) {
+      const auto saved = dispatcher.Dispatch(SaveCommand{});
+      status_message = saved.ok() ? "Saved" : "Save failed: " + saved.message;
+    } else if (result == InputResult::Handled) {
+      status_message.clear();
+    }
+    if (result == InputResult::Quit) {
       screen.ExitLoopClosure()();
-      return true;
     }
-    if (event == Event::Backspace) {
-      editor.Backspace();
-      return true;
-    }
-    if (event == Event::Delete) {
-      editor.Delete();
-      return true;
-    }
-    // FTXUI 7.0.3 has no named Shift+Arrow constants. In these terminal sequences,
-    // modifier 2 means Shift and A/B/C/D mean Up/Down/Right/Left.
-    if (event == Event::Special("\x1B[1;2D")) {
-      editor.MoveLeft(true);
-      return true;
-    }
-    if (event == Event::Special("\x1B[1;2C")) {
-      editor.MoveRight(true);
-      return true;
-    }
-    if (event == Event::Special("\x1B[1;2A")) {
-      editor.MoveUp(true);
-      return true;
-    }
-    if (event == Event::Special("\x1B[1;2B")) {
-      editor.MoveDown(true);
-      return true;
-    }
-    if (event == Event::Return) {
-      editor.InsertNewline();
-      return true;
-    }
-    if (event == Event::ArrowLeft) {
-      editor.MoveLeft();
-      return true;
-    }
-    if (event == Event::ArrowRight) {
-      editor.MoveRight();
-      return true;
-    }
-    if (event == Event::ArrowUp) {
-      editor.MoveUp();
-      return true;
-    }
-    if (event == Event::ArrowDown) {
-      editor.MoveDown();
-      return true;
-    }
-    // Handle text after special keys so navigation sequences are never inserted.
-    if (event.is_character()) {
-      editor.Insert(event.character());
-      return true;
-    }
-    return false;
+    return result != InputResult::Unhandled;
   });
 
-  // Process input and redraw until Escape invokes the exit closure above.
+  // Process input and redraw until a Quit command invokes the exit closure.
   screen.Loop(app);
   return 0;
 }

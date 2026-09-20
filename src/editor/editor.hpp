@@ -8,7 +8,7 @@
 
 namespace tui_demo {
 
-// Document contents and an optional path for future file loading/saving.
+// Document contents and its path (empty for an untitled document).
 struct MarkdownFile {
   std::filesystem::path file;
   std::string text;
@@ -22,11 +22,16 @@ struct EditorState {
   // An anchor equal to the cursor represents an empty selection.
   std::optional<std::size_t> selection_anchor;
   MarkdownFile currentDoc;
+  bool modified = false;
 };
 
 // Owns editing rules independently of terminal events and presentation.
 class Editor {
  public:
+  // Install an already loaded document and reset navigation and modification state.
+  void LoadDocument(MarkdownFile document);
+  // Called only after a successful save; preserves cursor and selection.
+  void MarkSaved() noexcept;
   // Insertions replace any selection and leave the cursor after the new text.
   void Insert(std::string_view text);
   void InsertNewline();

@@ -10,14 +10,14 @@
 
 namespace tui_demo {
 
-ftxui::Element BuildTui(const Editor& editor) {
+ftxui::Element BuildTui(const Editor& editor, const std::string& status_message) {
   using namespace ftxui;
 
   // Recompute proportions on each render so the layout follows terminal resizing.
   // Minimum dimensions reserve room for borders and the help text.
   const int left_pane_width = std::max(3, Terminal::Size().dimx * 15 / 100);
   const int bottom_pane_height =
-      std::max(5, Terminal::Size().dimy * 20 / 100);
+      std::max(6, Terminal::Size().dimy * 20 / 100);
 
   // Reserved sidebar; the document occupies the flexible area to its right.
   auto left_pane = emptyElement() | border |
@@ -35,7 +35,8 @@ ftxui::Element BuildTui(const Editor& editor) {
   auto bottom_pane = vbox({
                          text(" Terminal ") | bold | center,
                          separator(),
-                         text("Shift+Arrows: select | Backspace/Delete: erase | Esc: quit") | dim | center,
+                         text("Ctrl+S: save | Esc: quit") | dim | center,
+                         text(status_message) | center,
                      }) |
                      border | size(HEIGHT, EQUAL, bottom_pane_height);
 

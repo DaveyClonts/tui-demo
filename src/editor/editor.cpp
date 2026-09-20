@@ -1,6 +1,7 @@
 #include "editor.hpp"
 
 #include <algorithm>
+#include <utility>
 
 namespace tui_demo {
 namespace {
@@ -19,13 +20,26 @@ std::size_t LineStart(std::string_view document, std::size_t position) {
 
 }  // namespace
 
+void Editor::LoadDocument(MarkdownFile document) {
+  state_.currentDoc = std::move(document);
+  state_.cursor_position = 0;
+  state_.selection_anchor.reset();
+  state_.modified = false;
+  preferred_column_.reset();
+}
+
 void Editor::Insert(std::string_view text) {
   // Deletion moves the cursor to the range start before replacement text is inserted.
   DeleteSelection();
   auto& document_text = state_.currentDoc.text;
   document_text.insert(state_.cursor_position, text);
+  state_.modified = state_.modified || !text.empty();
   state_.cursor_position += text.size();
   preferred_column_.reset();
+}
+
+void Editor::MarkSaved() noexcept {
+  state_.modified = false;
 }
 
 void Editor::InsertNewline() {
@@ -43,6 +57,7 @@ void Editor::Backspace() {
   auto& document_text = state_.currentDoc.text;
   --state_.cursor_position;
   document_text.erase(state_.cursor_position, 1);
+  state_.modified = true;
   preferred_column_.reset();
 }
 
@@ -56,6 +71,7 @@ bool Editor::DeleteSelection() {
     return false;
   }
   state_.currentDoc.text.erase(start, end - start);
+  state_.modified = true;
   state_.cursor_position = start;
   preferred_column_.reset();
   return true;
@@ -67,6 +83,7 @@ void Editor::Delete() {
   }
   if (state_.cursor_position < state_.currentDoc.text.size()) {
     state_.currentDoc.text.erase(state_.cursor_position, 1);
+    state_.modified = true;
   }
   preferred_column_.reset();
 }
@@ -136,10 +153,10 @@ void Editor::MoveVertically(bool upward) {
       return;
     }
 
-    // A line starts immediately after a newline. That preceding newline is the
-    // previous line's end insertion position, not its last visible character.
+    // A line starts immediately after a newline
     const auto previous_line_end = current_line_start - 1;
     const auto previous_line_start = LineStart(document, previous_line_end);
+
     // Clamp this move to the line length but retain the desired column for later moves.
     const auto target_column = preferred_column_.value_or(current_column);
     preferred_column_ = target_column;
