@@ -30,6 +30,22 @@ int RunApplication() {
       editor.InsertNewline();
       return true;
     }
+    if (event == Event::ArrowLeft) {
+      editor.MoveLeft();
+      return true;
+    }
+    if (event == Event::ArrowRight) {
+      editor.MoveRight();
+      return true;
+    }
+    if (event == Event::ArrowUp) {
+      editor.MoveUp();
+      return true;
+    }
+    if (event == Event::ArrowDown) {
+      editor.MoveDown();
+      return true;
+    }
     if (event.is_character()) {
       editor.Insert(event.character());
       return true;

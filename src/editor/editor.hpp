@@ -2,6 +2,7 @@
 
 #include <cstddef>
 #include <filesystem>
+#include <optional>
 #include <string>
 #include <string_view>
 
@@ -22,11 +23,18 @@ class Editor {
   void Insert(std::string_view text);
   void InsertNewline();
   void Backspace();
+  void MoveLeft();
+  void MoveRight();
+  void MoveUp();
+  void MoveDown();
 
   const EditorState& State() const noexcept;
 
  private:
+  void MoveVertically(bool upward);
+
   EditorState state_;
+  std::optional<std::size_t> preferred_column_; //when moving from a longer line to a shorter line
 };
 
 }  // namespace tui_demo
