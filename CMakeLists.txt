@@ -22,6 +22,7 @@ add_executable(edit_tui
   src/commands/dispatcher.cpp
   src/commands/open.cpp
   src/commands/save.cpp
+  src/commands/new.cpp
   src/input/keymap.cpp
   src/editor/editor.cpp
   src/tui/tui.cpp

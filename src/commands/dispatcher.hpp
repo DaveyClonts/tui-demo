@@ -17,9 +17,11 @@ struct OpenCommand {
 // Save the current document back to its existing path.
 struct SaveCommand {};
 
+struct NewCommand{};
+
 // Add future request types here, each with its own typed arguments and handler.
 // The dispatcher has no terminal dependency, so a CLI, prompt, or menu can use it.
-using CommandRequest = std::variant<OpenCommand, SaveCommand>;
+using CommandRequest = std::variant<OpenCommand, SaveCommand, NewCommand>;
 
 enum class CommandError {
   None,
@@ -46,6 +48,7 @@ class CommandDispatcher {
  private:
   CommandResult Execute(const OpenCommand& command);
   CommandResult Execute(const SaveCommand& command);
+  CommandResult Execute(const NewCommand& command);
   Editor& editor_;
 };
 
