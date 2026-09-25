@@ -20,6 +20,8 @@ FetchContent_MakeAvailable(ftxui)
 add_executable(edit_tui
   src/application.cpp
   src/commands/dispatcher.cpp
+  src/commands/open.cpp
+  src/commands/save.cpp
   src/input/keymap.cpp
   src/editor/editor.cpp
   src/tui/tui.cpp

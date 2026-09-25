@@ -1,4 +1,4 @@
-# FTXUI split-screen demo test
+# FTXUI split-screen
  
 A small C++17 terminal editor built with FTXUI.
 
