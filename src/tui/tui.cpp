@@ -24,12 +24,15 @@ ftxui::Element BuildTui(const Editor& editor, const std::string& status_message)
                    size(WIDTH, EQUAL, left_pane_width) | yflex;
 
   const auto& editor_state = editor.State();
+  const auto filename = editor_state.currentDoc.file.empty()
+      ? std::string{"Untitled"}
+      : editor_state.currentDoc.file.filename().string();
   // frame keeps the focused cursor visible; flex lets the viewport fit the pane.
-  auto top_pane =
-      vbox(RenderDocument(editor_state.currentDoc.text,
-                          editor_state.cursor_position,
-                          editor_state.selection_anchor)) |
-      vscroll_indicator | frame | flex | border | yflex;
+  auto document = vbox(RenderDocument(editor_state.currentDoc.text,
+                                      editor_state.cursor_position,
+                                      editor_state.selection_anchor)) |
+                  vscroll_indicator | frame | flex;
+  auto top_pane = window(text(" " + filename + " ") | bold, document) | yflex;
 
   // This is a static help pane, not an embedded shell or terminal process.
   auto bottom_pane = vbox({

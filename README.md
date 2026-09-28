@@ -4,7 +4,7 @@ A small C++17 terminal editor built with FTXUI.
 
 ## Build
 
-FTXUI is downloaded automatically when CMake configures the project.
+FTXUI and CLI11 are downloaded automatically when CMake configures the project.
 
 ```powershell
 cmake -S . -B build
@@ -31,7 +31,18 @@ Open an existing file on startup (quote paths containing spaces):
 ./build/edit_tui open "notes/my document.md"
 ```
 
-`--help` prints usage. Invalid arguments exit with code 2; file-loading errors
+Create and open a new Markdown file in the current directory:
+
+```sh
+./build/edit_tui new
+```
+
+The first file is named `newFile.md`; if that name exists, the editor tries
+`newFile1.md`, `newFile2.md`, and so on.
+
+`--help` (or `-h`) prints usage; `open --help` describes the file argument.
+Startup argument parsing lives in `src/commands/cli.cpp`.
+Invalid arguments exit with code 2; file-loading errors
 print a message and exit with code 1 before entering the terminal UI. Files are
 read into memory without modifying them. Missing files are reported rather than
 created. Ctrl+S saves changes back to the opened file.

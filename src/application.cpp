@@ -13,16 +13,22 @@
 
 namespace tui_demo {
 
-int RunApplication(std::optional<std::filesystem::path> initial_path) {
+int RunApplication(const StartupOptions& options) {
   using namespace ftxui;
 
   Editor editor;
   CommandDispatcher dispatcher(editor);
   // Report startup errors before entering fullscreen so they remain visible in the shell.
-  if (initial_path) {
-    const auto result = dispatcher.Dispatch(OpenCommand{*initial_path});
+  if (options.action == StartupAction::Open && options.initial_path) {
+    const auto result = dispatcher.Dispatch(OpenCommand{*options.initial_path});
     if (!result.ok()) {
-      std::cerr << "open " << *initial_path << ": " << result.message << '\n';
+      std::cerr << "open " << *options.initial_path << ": " << result.message << '\n';
+      return 1;
+    }
+  } else if (options.action == StartupAction::New) {
+    const auto result = dispatcher.Dispatch(NewCommand{});
+    if (!result.ok()) {
+      std::cerr << "new: " << result.message << '\n';
       return 1;
     }
   }

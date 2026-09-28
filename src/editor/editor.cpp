@@ -146,40 +146,35 @@ void Editor::MoveDown(bool selecting) {
 void Editor::MoveVertically(bool upward) {
   const auto& document = state_.currentDoc.text;
   const auto current_line_start = LineStart(document, state_.cursor_position);
-  const auto current_column = state_.cursor_position - current_line_start;
+  std::size_t target_line_start;
+  std::size_t target_line_end;
 
   if (upward) {
     if (current_line_start == 0) {
       return;
     }
 
-    // A line starts immediately after a newline
-    const auto previous_line_end = current_line_start - 1;
-    const auto previous_line_start = LineStart(document, previous_line_end);
+    target_line_end = current_line_start - 1;
+    target_line_start = LineStart(document, target_line_end);
+  } else {
+    const auto current_line_end = document.find('\n', state_.cursor_position);
+    if (current_line_end == std::string::npos) {
+      return;
+    }
 
-    // Clamp this move to the line length but retain the desired column for later moves.
-    const auto target_column = preferred_column_.value_or(current_column);
-    preferred_column_ = target_column;
-    state_.cursor_position =
-        previous_line_start +
-        std::min(target_column, previous_line_end - previous_line_start);
-    return;
+    // Skip the newline to enter the next line; EOF is the final line's end.
+    target_line_start = current_line_end + 1;
+    const auto next_newline = document.find('\n', target_line_start);
+    target_line_end =
+        next_newline == std::string::npos ? document.size() : next_newline;
   }
 
-  const auto current_line_end = document.find('\n', state_.cursor_position);
-  if (current_line_end == std::string::npos) {
-    return;
-  }
-
-  // Skip the newline to enter the next line; EOF is the final line's end.
-  const auto next_line_start = current_line_end + 1;
-  const auto next_newline = document.find('\n', next_line_start);
-  const auto next_line_end =
-      next_newline == std::string::npos ? document.size() : next_newline;
-  const auto target_column = preferred_column_.value_or(current_column);
+  // Clamp to the line length while remembering the desired column for later moves.
+  const auto target_column =
+      preferred_column_.value_or(state_.cursor_position - current_line_start);
   preferred_column_ = target_column;
   state_.cursor_position =
-      next_line_start + std::min(target_column, next_line_end - next_line_start);
+      target_line_start + std::min(target_column, target_line_end - target_line_start);
 }
 
 const EditorState& Editor::State() const noexcept {

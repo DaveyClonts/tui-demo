@@ -1,21 +1,12 @@
 #include "application.hpp"
-
-#include <iostream>
-#include <string_view>
+#include "commands/cli.hpp"
 
 // Keep process startup separate from the terminal application and editing logic.
 int main(int argc, char* argv[]) {
-  if (argc == 1) {
-    return tui_demo::RunApplication();
+  const auto result = tui_demo::ParseCommandLine(argc, argv);
+  if (const auto* exit_code = std::get_if<int>(&result)) {
+    return *exit_code;
   }
-  // The shell handles quoting, so paths containing spaces arrive as one argument.
-  if (argc == 3 && std::string_view(argv[1]) == "open") {
-    return tui_demo::RunApplication(std::filesystem::path(argv[2]));
-  }
-  if (argc == 2 && std::string_view(argv[1]) == "--help") {
-    std::cout << "Usage: edit_tui [open <path>]\n";
-    return 0;
-  }
-  std::cerr << "Usage: edit_tui [open <path>]\n";
-  return 2;
+
+  return tui_demo::RunApplication(std::get<tui_demo::StartupOptions>(result));
 }

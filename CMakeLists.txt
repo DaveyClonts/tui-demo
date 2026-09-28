@@ -16,9 +16,18 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(ftxui)
 
+FetchContent_Declare(
+  cli11
+  GIT_REPOSITORY https://github.com/CLIUtils/CLI11.git
+  GIT_TAG v2.4.2
+  GIT_SHALLOW TRUE
+)
+FetchContent_MakeAvailable(cli11)
+
 # Application wiring, editing rules, layout, and text rendering are separate units.
 add_executable(edit_tui
   src/application.cpp
+  src/commands/cli.cpp
   src/commands/dispatcher.cpp
   src/commands/open.cpp
   src/commands/save.cpp
@@ -31,4 +40,4 @@ add_executable(edit_tui
 )
 target_compile_features(edit_tui PRIVATE cxx_std_17)
 target_include_directories(edit_tui PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/src")
-target_link_libraries(edit_tui PRIVATE ftxui::ftxui)
+target_link_libraries(edit_tui PRIVATE ftxui::ftxui CLI11::CLI11)
