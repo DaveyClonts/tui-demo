@@ -76,7 +76,17 @@ InputResult ExecuteCommand(Command command, Editor& editor) {
 
 InputResult HandleInput(const ftxui::Event& event, const Keymap& keymap,
                         Editor& editor) {
-  if (const auto command = keymap.Lookup(event)) {
+  const auto command = keymap.Lookup(event);
+  if (!editor.State().document_open) {
+    if (command && *command == Command::Quit) {
+      return ExecuteCommand(*command, editor);
+    }
+    return command || event.is_character()
+        ? InputResult::Handled
+        : InputResult::Unhandled;
+  }
+
+  if (command) {
     return ExecuteCommand(*command, editor);
   }
   if (event.is_character()) {

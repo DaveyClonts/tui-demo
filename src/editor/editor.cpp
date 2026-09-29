@@ -22,6 +22,7 @@ std::size_t LineStart(std::string_view document, std::size_t position) {
 
 void Editor::LoadDocument(MarkdownFile document) {
   state_.currentDoc = std::move(document);
+  state_.document_open = true;
   state_.cursor_position = 0;
   state_.selection_anchor.reset();
   state_.modified = false;

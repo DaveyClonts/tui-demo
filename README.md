@@ -19,6 +19,9 @@ With a single-config generator:
 ./build/edit_tui
 ```
 
+Starting without a subcommand opens the application with no document. Editing
+and navigation remain disabled until a document is opened or created.
+
 With Visual Studio or another multi-config generator:
 
 ```powershell

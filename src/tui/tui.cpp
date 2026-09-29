@@ -24,15 +24,19 @@ ftxui::Element BuildTui(const Editor& editor, const std::string& status_message)
                    size(WIDTH, EQUAL, left_pane_width) | yflex;
 
   const auto& editor_state = editor.State();
-  const auto filename = editor_state.currentDoc.file.empty()
-      ? std::string{"Untitled"}
-      : editor_state.currentDoc.file.filename().string();
-  // frame keeps the focused cursor visible; flex lets the viewport fit the pane.
-  auto document = vbox(RenderDocument(editor_state.currentDoc.text,
-                                      editor_state.cursor_position,
-                                      editor_state.selection_anchor)) |
-                  vscroll_indicator | frame | flex;
-  auto top_pane = window(text(" " + filename + " ") | bold, document) | yflex;
+  // Do not render an editing cursor until a document has been opened or created.
+  auto document = editor_state.document_open
+      ? vbox(RenderDocument(editor_state.currentDoc.text,
+                            editor_state.cursor_position,
+                            editor_state.selection_anchor)) |
+            vscroll_indicator | frame | flex
+      : text("Open or create a document to begin editing.") | dim | center;
+  auto top_pane = editor_state.document_open
+      ? window(text(" " + editor_state.currentDoc.file.filename().string() + " ") |
+                   bold,
+               document) |
+            yflex
+      : document | border | yflex;
 
   // This is a static help pane, not an embedded shell or terminal process.
   auto bottom_pane = vbox({

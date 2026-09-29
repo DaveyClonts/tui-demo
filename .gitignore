@@ -69,3 +69,7 @@ vcpkg_installed/
 # test output & cache
 Testing/
 .cache/
+
+# md files created by testing
+*.md
+!README.md
