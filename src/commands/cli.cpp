@@ -24,14 +24,13 @@ CliResult ParseCommandLine(int argc, char* argv[]) {
     return code == 0 ? 0 : 2;
   }
 
-  StartupOptions options;
   if (*open) {
-    options.action = StartupAction::Open;
-    options.initial_path = std::filesystem::path{path};
-  } else if (*new_command) {
-    options.action = StartupAction::New;
+    return StartupRequest{OpenCommand{std::filesystem::path{path}}};
   }
-  return options;
+  if (*new_command) {
+    return StartupRequest{NewCommand{}};
+  }
+  return StartupRequest{EditUntitled{}};
 }
 
 }  // namespace tui_demo

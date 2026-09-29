@@ -1,24 +1,18 @@
 #pragma once
 
-#include <filesystem>
-#include <optional>
 #include <variant>
+
+#include "commands/dispatcher.hpp"
 
 namespace tui_demo {
 
-enum class StartupAction {
-  EditUntitled,
-  Open,
-  New,
-};
+struct EditUntitled {};
 
-struct StartupOptions {
-  StartupAction action = StartupAction::EditUntitled;
-  std::optional<std::filesystem::path> initial_path;
-};
+// Each alternative contains exactly the data needed for one startup action.
+using StartupRequest = std::variant<EditUntitled, OpenCommand, NewCommand>;
 
-// Options mean launch; an exit code means help or a parsing error.
-using CliResult = std::variant<StartupOptions, int>;
+// A request means launch; an exit code means help or a parsing error.
+using CliResult = std::variant<StartupRequest, int>;
 
 CliResult ParseCommandLine(int argc, char* argv[]);
 

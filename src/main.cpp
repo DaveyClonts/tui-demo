@@ -8,5 +8,5 @@ int main(int argc, char* argv[]) {
     return *exit_code;
   }
 
-  return tui_demo::RunApplication(std::get<tui_demo::StartupOptions>(result));
+  return tui_demo::RunApplication(std::get<tui_demo::StartupRequest>(result));
 }
