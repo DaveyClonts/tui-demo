@@ -1,6 +1,7 @@
 #include "editor.hpp"
 
 #include <algorithm>
+#include <cctype>
 #include <utility>
 
 namespace tui_demo {
@@ -134,9 +135,57 @@ void Editor::MoveRight(bool selecting) {
   preferred_column_.reset();
 }
 
+void Editor::MoveWordLeft(bool selecting) {
+  if (!selecting && state_.selection_anchor &&
+      *state_.selection_anchor != state_.cursor_position) {
+    MoveLeft();
+    return;
+  }
+  PrepareSelection(selecting);
+  const auto& text = state_.currentDoc.text;
+  auto& position = state_.cursor_position;
+  // Skip whitespace, then the preceding word (a run of non-whitespace bytes).
+  while (position > 0 &&
+         std::isspace(static_cast<unsigned char>(text[position - 1]))) {
+    --position;
+  }
+  while (position > 0 &&
+         !std::isspace(static_cast<unsigned char>(text[position - 1]))) {
+    --position;
+  }
+  preferred_column_.reset();
+}
+
+void Editor::MoveWordRight(bool selecting) {
+  if (!selecting && state_.selection_anchor &&
+      *state_.selection_anchor != state_.cursor_position) {
+    MoveRight();
+    return;
+  }
+  PrepareSelection(selecting);
+  const auto& text = state_.currentDoc.text;
+  auto& position = state_.cursor_position;
+  // Skip this word and following whitespace to reach the next word's start.
+  while (position < text.size() &&
+         !std::isspace(static_cast<unsigned char>(text[position]))) {
+    ++position;
+  }
+  while (position < text.size() &&
+         std::isspace(static_cast<unsigned char>(text[position]))) {
+    ++position;
+  }
+  preferred_column_.reset();
+}
+
 void Editor::MoveUp(bool selecting) {
   PrepareSelection(selecting);
   MoveVertically(true);
+}
+
+void Editor::SetCursorPosition(std::size_t position, bool selecting) {
+  PrepareSelection(selecting);
+  state_.cursor_position = std::min(position, state_.currentDoc.text.size());
+  preferred_column_.reset();
 }
 
 void Editor::MoveDown(bool selecting) {

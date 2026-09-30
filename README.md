@@ -51,6 +51,15 @@ read into memory without modifying them. Missing files are reported rather than
 created. Ctrl+S saves changes back to the opened file.
 
 - Arrow keys move the cursor.
+- Left-click in the document to position the cursor; Shift+click extends the
+  selection. Hold the left button and drag to select text across lines; releasing
+  anywhere ends the drag. Dragging outside the document keeps the last selection
+  until you return or release. Clicks past a line end stop at that line's end, and clicks below
+  the text go to the end of the document. Mouse positioning currently assumes
+  one terminal column per byte (plain ASCII without tabs).
+- Ctrl+Left/Right jump to the previous/next word start, crossing spaces, tabs,
+  and newlines. Words are runs of non-whitespace characters, including punctuation.
+  With a selection, they collapse it to its start/end.
 - Shift+Arrow keys extend or shrink the highlighted selection, including across lines.
 - Left/Right without Shift collapse a selection to its start/end.
 - Backspace/Delete remove the selection; otherwise they delete before/at the cursor.
@@ -63,7 +72,7 @@ Cursor positions currently use byte offsets, so editing multibyte Unicode is not
 
 ## Key bindings
 
-`src/input/keymap.cpp` defines the default keys and dispatches named commands to
+`src/editor/input/keymap.cpp` defines the default keys and dispatches named commands to
 the editor. `application.cpp` forwards input and handles the quit result.
 To customize keys in code, configure the `Keymap` after it is constructed:
 

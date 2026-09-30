@@ -31,8 +31,11 @@ class Editor {
   void Delete();
   void MoveLeft(bool selecting = false);
   void MoveRight(bool selecting = false);
+  void MoveWordLeft(bool selecting = false);
+  void MoveWordRight(bool selecting = false);
   void MoveUp(bool selecting = false);
   void MoveDown(bool selecting = false);
+  void SetCursorPosition(std::size_t position, bool selecting = false);
 
   const EditorState& State() const noexcept;
 

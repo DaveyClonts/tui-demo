@@ -28,6 +28,13 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(cli11)
 
+file(READ "${CMAKE_CURRENT_SOURCE_DIR}/assets/scribletTitle.txt" SCRIBLET_TITLE)
+configure_file(
+  src/tui/assets.hpp.in
+  "${CMAKE_CURRENT_BINARY_DIR}/generated/tui/assets.hpp"
+  @ONLY
+)
+
 # Application wiring, editing rules, layout, and text rendering are separate units.
 add_executable(edit_tui
   src/application.cpp
@@ -36,12 +43,15 @@ add_executable(edit_tui
   src/commands/open.cpp
   src/commands/save.cpp
   src/commands/new.cpp
-  src/input/keymap.cpp
+  src/editor/input/keymap.cpp
   src/editor/editor.cpp
   src/tui/tui.cpp
   src/renderer/renderer.cpp
   src/main.cpp
 )
 target_compile_features(edit_tui PRIVATE cxx_std_17)
-target_include_directories(edit_tui PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/src")
+target_include_directories(edit_tui PRIVATE
+  "${CMAKE_CURRENT_SOURCE_DIR}/src"
+  "${CMAKE_CURRENT_BINARY_DIR}/generated"
+)
 target_link_libraries(edit_tui PRIVATE ftxui::ftxui CLI11::CLI11)

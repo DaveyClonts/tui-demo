@@ -1,4 +1,4 @@
-#include "input/keymap.hpp"
+#include "editor/input/keymap.hpp"
 
 #include <algorithm>
 #include <utility>
@@ -14,6 +14,9 @@ Keymap::Keymap() {
       {Event::ArrowRight, Command::MoveRight},
       {Event::ArrowUp, Command::MoveUp},
       {Event::ArrowDown, Command::MoveDown},
+      // Modifier 5 means Ctrl in these terminal sequences.
+      {Event::Special("\x1B[1;5D"), Command::MoveWordLeft},
+      {Event::Special("\x1B[1;5C"), Command::MoveWordRight},
       // FTXUI 7.0.3 has no named Shift+Arrow constants. Modifier 2 means Shift;
       // A/B/C/D identify Up/Down/Right/Left in these terminal sequences.
       {Event::Special("\x1B[1;2D"), Command::SelectLeft},
@@ -59,6 +62,8 @@ InputResult ExecuteCommand(Command command, Editor& editor) {
   switch (command) {
     case Command::MoveLeft: editor.MoveLeft(); break;
     case Command::MoveRight: editor.MoveRight(); break;
+    case Command::MoveWordLeft: editor.MoveWordLeft(); break;
+    case Command::MoveWordRight: editor.MoveWordRight(); break;
     case Command::MoveUp: editor.MoveUp(); break;
     case Command::MoveDown: editor.MoveDown(); break;
     case Command::SelectLeft: editor.MoveLeft(true); break;
@@ -74,10 +79,12 @@ InputResult ExecuteCommand(Command command, Editor& editor) {
   return InputResult::Handled;
 }
 
-InputResult HandleInput(const ftxui::Event& event, const Keymap& keymap,
-                        Editor& editor) {
+InputResult HandleInput(ftxui::Event event, const Keymap& keymap,
+                        Editor& editor, InputState& input_state,
+                        std::optional<std::size_t> mouse_position) {
   const auto command = keymap.Lookup(event);
   if (!editor.State().document_open) {
+    input_state.mouse_selecting = false;
     if (command && *command == Command::Quit) {
       return ExecuteCommand(*command, editor);
     }
@@ -87,9 +94,35 @@ InputResult HandleInput(const ftxui::Event& event, const Keymap& keymap,
   }
 
   if (command) {
+    input_state.mouse_selecting = false;
     return ExecuteCommand(*command, editor);
   }
+  if (event.is_mouse()) {
+    const auto& mouse = event.mouse();
+    if (mouse.motion == ftxui::Mouse::Released &&
+        (mouse.button == ftxui::Mouse::Left || mouse.button == ftxui::Mouse::None)) {
+      const bool was_selecting = input_state.mouse_selecting;
+      input_state.mouse_selecting = false;
+      return was_selecting ? InputResult::Handled : InputResult::Unhandled;
+    }
+    if (mouse.button == ftxui::Mouse::Left) {
+      if (mouse.motion == ftxui::Mouse::Pressed) {
+        input_state.mouse_selecting = mouse_position.has_value();
+        if (mouse_position) {
+          editor.SetCursorPosition(*mouse_position, mouse.shift);
+          return InputResult::Handled;
+        }
+      } else if (mouse.motion == ftxui::Mouse::Moved && input_state.mouse_selecting) {
+        if (mouse_position && *mouse_position != editor.State().cursor_position) {
+          editor.SetCursorPosition(*mouse_position, true);
+        }
+        return InputResult::Handled;
+      }
+    }
+    return InputResult::Unhandled;
+  }
   if (event.is_character()) {
+    input_state.mouse_selecting = false;
     editor.Insert(event.character());
     return InputResult::Handled;
   }

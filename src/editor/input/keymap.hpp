@@ -3,6 +3,7 @@
 #include <ftxui/component/event.hpp>
 
 #include <optional>
+#include <cstddef>
 #include <vector>
 
 namespace tui_demo {
@@ -13,6 +14,8 @@ class Editor;
 enum class Command {
   MoveLeft,
   MoveRight,
+  MoveWordLeft,
+  MoveWordRight,
   MoveUp,
   MoveDown,
   SelectLeft,
@@ -49,10 +52,15 @@ class Keymap {
 // Let the application own terminal shutdown, while input dispatch stays testable.
 enum class InputResult { Unhandled, Handled, Quit, Save };
 
+struct InputState {
+  bool mouse_selecting = false;
+};
+
 InputResult ExecuteCommand(Command command, Editor& editor);
 
 // Explicit bindings take precedence over ordinary character insertion.
-InputResult HandleInput(const ftxui::Event& event, const Keymap& keymap,
-                        Editor& editor);
+InputResult HandleInput(ftxui::Event event, const Keymap& keymap,
+                        Editor& editor, InputState& input_state,
+                        std::optional<std::size_t> mouse_position = std::nullopt);
 
 }  // namespace tui_demo

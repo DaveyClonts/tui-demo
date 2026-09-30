@@ -8,7 +8,7 @@
 
 #include "commands/dispatcher.hpp"
 #include "editor/editor.hpp"
-#include "input/keymap.hpp"
+#include "editor/input/keymap.hpp"
 #include "tui/tui.hpp"
 
 namespace tui_demo {
@@ -35,14 +35,27 @@ int RunApplication(const StartupRequest& request) {
 
   auto screen = ScreenInteractive::Fullscreen();
   Keymap keymap;
+  InputState input_state;
   std::string status_message;
+  DocumentLayout document_layout;
 
   // Rebuild the view from current editor state whenever FTXUI draws a frame.
-  auto view = Renderer([&] { return BuildTui(editor, status_message); });
+  auto view = Renderer([&] {
+    // FTXUI enables all-motion reporting (1003), which redraws and resets the
+    // blinking cursor on every hover event. Request button/drag events (1002).
+    // Rendering runs after terminal setup, including setup after Ctrl+Z/resume.
+    // Leave tracking enabled in FTXUI so it still restores mouse modes on exit.
+    std::cout << "\x1b[?1003l\x1b[?1002h" << std::flush;
+    return BuildTui(editor, status_message, &document_layout);
+  });
 
   // Input dispatch reports quit separately so the application owns screen lifetime.
   auto app = CatchEvent(view, [&](Event event) {
-    const auto result = HandleInput(event, keymap, editor);
+    const auto mouse_position = event.is_mouse()
+        ? document_layout.PositionAt(event.mouse().x, event.mouse().y,
+                                      editor.State().currentDoc.text)
+        : std::nullopt;
+    const auto result = HandleInput(event, keymap, editor, input_state, mouse_position);
     if (result == InputResult::Save) {
       const auto saved = dispatcher.Dispatch(SaveCommand{});
       status_message = saved.ok() ? "Saved" : "Save failed: " + saved.message;
@@ -57,6 +70,7 @@ int RunApplication(const StartupRequest& request) {
 
   // Process input and redraw until a Quit command invokes the exit closure.
   screen.Loop(app);
+  std::cout << "\x1b[?1002l" << std::flush;
   return 0;
 }
 

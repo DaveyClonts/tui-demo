@@ -1,0 +1,9 @@
+#pragma once
+
+#include <string_view>
+
+namespace tui_demo {
+
+inline constexpr std::string_view kScribletTitle = R"SCRIBLET(@SCRIBLET_TITLE@)SCRIBLET";
+
+}
