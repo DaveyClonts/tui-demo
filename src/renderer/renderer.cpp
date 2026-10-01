@@ -1,6 +1,7 @@
 #include "renderer/renderer.hpp"
 
 #include <algorithm>
+#include <ftxui/dom/elements.hpp>
 #include <optional>
 #include <string>
 #include <vector>
@@ -118,6 +119,38 @@ ftxui::Elements RenderDocument(std::string_view document,
   return lines;
 }
 
-//TODO: rewrite RenderDocument for the sake of it, and to better understand it
+ftxui::Elements RenderDocument2(std::string_view document, 
+  std::size_t cursor_position,
+  std::optional<std::size_t> selection_anchor) {
+    
+    ftxui::Elements lines;
+
+    // Doesn't let cursor_position exceed document size
+    cursor_position = std::min(cursor_position, document.size());
+
+    //TODO: figure out selection logic
+
+    std::size_t line_start_position = 0;
+    while (line_start_position <= document.size()) {
+      const size_t newline_position = document.find('\n', line_start_position);
+
+      size_t line_end_position;
+      const size_t max_size_t_value = std::string_view::npos;
+
+      if (newline_position == max_size_t_value) {
+        line_end_position = document.size();
+      } else {
+        line_end_position = newline_position;
+      }
+      
+      const size_t line_size = line_end_position - line_start_position; 
+      const auto line = document.substr(line_start_position, line_size);
+      
+      const bool line_contains_cursor = cursor_position >= line_start_position && 
+                                        cursor_position <= line_end_position;
+
+      //TODO: figure out renderLine mess
+    }
+}
 
 }  // namespace tui_demo
