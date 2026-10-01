@@ -49,7 +49,7 @@ add_executable(edit_tui
   src/renderer/renderer.cpp
   src/main.cpp
 )
-target_compile_features(edit_tui PRIVATE cxx_std_17)
+target_compile_features(edit_tui PRIVATE cxx_std_20)
 target_include_directories(edit_tui PRIVATE
   "${CMAKE_CURRENT_SOURCE_DIR}/src"
   "${CMAKE_CURRENT_BINARY_DIR}/generated"

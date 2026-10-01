@@ -1,25 +1,102 @@
 #include "renderer/renderer.hpp"
 
 #include <algorithm>
+#include <cstddef>
 #include <ftxui/dom/elements.hpp>
 #include <optional>
 #include <string>
-#include <vector>
 #include <utility>
+#include <vector>
 
 namespace tui_demo {
 namespace {
 
-std::vector<std::size_t> FindStyleBoundaries(
-    std::size_t line_size,
-    std::optional<std::size_t> cursor_column,
-    std::size_t selection_start,
-    std::size_t selection_end) {
-  std::vector<std::size_t> boundaries = {
-      0, line_size, selection_start, selection_end};
+struct TextRange {
+  std::size_t start;
+  std::size_t end;
+};
+
+struct DocumentLine {
+  std::string_view text;
+  TextRange line_range;
+  bool has_newline;
+};
+
+bool IsUtf8Continuation(char byte) {
+  return (static_cast<unsigned char>(byte) & 0xC0) == 0x80;
+}
+
+// Positions are byte offsets. Snap an offset inside a character to its start.
+std::size_t CharacterStart(std::string_view text, std::size_t position) {
+  position = std::min(position, text.size());
+  while (position > 0 && position < text.size() &&
+         IsUtf8Continuation(text[position])) {
+    --position;
+  }
+  return position;
+}
+
+std::size_t NextCharacter(std::string_view text, std::size_t position) {
+  if (position >= text.size()) {
+    return text.size();
+  }
+  ++position;
+  while (position < text.size() && IsUtf8Continuation(text[position])) {
+    ++position;
+  }
+  return position;
+}
+
+TextRange NormalizeSelection(std::size_t cursor_position,
+                             std::optional<std::size_t> selection_anchor,
+                             std::size_t document_size) {
+  const std::size_t cursor = std::min(cursor_position, document_size);
+  const std::size_t anchor =
+      std::min(selection_anchor.value_or(cursor), document_size);
+
+  return TextRange{
+      .start = std::min(anchor, cursor),
+      .end = std::max(anchor, cursor),
+  };
+}
+
+DocumentLine FindLine(std::string_view document,
+                      std::size_t line_start_position) {
+  const std::size_t newline_position = document.find('\n', line_start_position);
+  // npos is returned by .find if char not found
+  const bool has_newline = newline_position != std::string_view::npos;
+
+  std::size_t line_end_position;
+  if (has_newline) {
+    line_end_position = newline_position;
+  } else {
+    line_end_position = document.size();
+  }
+
+  TextRange line_range{
+      .start = line_start_position,
+      .end = line_end_position,
+  };
+
+  const auto document_line_text = document.substr(
+      line_start_position, line_end_position - line_start_position);
+
+  return DocumentLine{
+      .text = document_line_text,
+      .line_range = line_range,
+      .has_newline = has_newline,
+  };
+}
+
+std::vector<std::size_t>
+FindStyleBoundaries(std::string_view line,
+                    std::optional<std::size_t> cursor_column,
+                    TextRange selection) {
+  std::vector<std::size_t> boundaries = {0, line.size(), selection.start,
+                                         selection.end};
   if (cursor_column) {
     boundaries.push_back(*cursor_column);
-    boundaries.push_back(*cursor_column + 1);
+    boundaries.push_back(NextCharacter(line, *cursor_column));
   }
   std::sort(boundaries.begin(), boundaries.end());
   boundaries.erase(std::unique(boundaries.begin(), boundaries.end()),
@@ -27,130 +104,92 @@ std::vector<std::size_t> FindStyleBoundaries(
   return boundaries;
 }
 
-ftxui::Element RenderPiece(std::string_view line,
-                           std::size_t start,
-                           std::size_t end,
-                           std::optional<std::size_t> cursor_column,
-                           std::size_t selection_start,
-                           std::size_t selection_end) {
-  auto piece = ftxui::text(std::string{line.substr(start, end - start)});
-  if (start >= selection_start && start < selection_end) {
-    piece = piece | ftxui::bgcolor(ftxui::Color::Blue) |
-            ftxui::color(ftxui::Color::White);
+ftxui::Element RenderSegment(std::string_view line, TextRange segment,
+                             std::optional<std::size_t> cursor_column,
+                             TextRange selection) {
+  ftxui::Element element = ftxui::text(
+      std::string{line.substr(segment.start, segment.end - segment.start)});
+  if (segment.start >= selection.start && segment.start < selection.end) {
+    element = element | ftxui::bgcolor(ftxui::Color::Blue) |
+              ftxui::color(ftxui::Color::White);
   }
-  if (cursor_column && start == *cursor_column) {
-    piece = piece | ftxui::focusCursorBarBlinking;
+  if (cursor_column && segment.start == *cursor_column) {
+    element = element | ftxui::focusCursorBarBlinking;
   }
-  return piece;
+  return element;
 }
 
-// Inputs are offsets relative to this line; line excludes its newline byte.
-ftxui::Element RenderLine(std::string_view line,
-                          std::optional<std::size_t> cursor_column,
-                          std::size_t selection_start,
-                          std::size_t selection_end,
-                          bool newline_selected) {
-  // A display-only trailing cell shows a selected newline or an end-of-line cursor.
-  // This also gives empty lines a cell to highlight without changing the document.
-  std::string visible(line);
-  if (newline_selected || (cursor_column && *cursor_column == line.size())) {
+ftxui::Element RenderLine(const DocumentLine& line, std::size_t cursor_position,
+                          TextRange selection) {
+  const TextRange range = line.line_range;
+  const bool contains_cursor =
+      cursor_position >= range.start && cursor_position <= range.end;
+  const std::optional<std::size_t> cursor_column =
+      contains_cursor
+          ? std::optional<std::size_t>{cursor_position - range.start}
+          : std::nullopt;
+  TextRange local_selection{
+      std::clamp(selection.start, range.start, range.end) - range.start,
+      std::clamp(selection.end, range.start, range.end) - range.start,
+  };
+  const bool newline_selected = line.has_newline &&
+                                selection.start <= range.end &&
+                                selection.end > range.end;
+
+  // A display-only trailing cell shows a selected newline or an end-of-line
+  // cursor. This also gives empty lines a cell to highlight without changing
+  // the document.
+  std::string visible(line.text);
+  if (newline_selected ||
+      (cursor_column && *cursor_column == line.text.size())) {
     visible += ' ';
   }
   if (newline_selected) {
-    selection_end = visible.size();
+    local_selection.end = visible.size();
   }
 
-  const auto boundaries = FindStyleBoundaries(
-      visible.size(), cursor_column, selection_start, selection_end);
+  const std::vector<std::size_t> boundaries =
+      FindStyleBoundaries(visible, cursor_column, local_selection);
 
-  ftxui::Elements pieces;
+  ftxui::Elements segments;
   for (std::size_t i = 1; i < boundaries.size(); ++i) {
-    pieces.push_back(RenderPiece(
-        visible, boundaries[i - 1], boundaries[i], cursor_column,
-        selection_start, selection_end));
+    const TextRange segment{
+        .start = boundaries[i - 1],
+        .end = boundaries[i],
+    };
+    segments.push_back(
+        RenderSegment(visible, segment, cursor_column, local_selection));
   }
-  return pieces.empty() ? ftxui::text("") : ftxui::hbox(std::move(pieces));
+  return segments.empty() ? ftxui::text("") : ftxui::hbox(std::move(segments));
 }
 
-}  // namespace
-
+} // namespace
 
 ftxui::Elements RenderDocument(std::string_view document,
                                std::size_t cursor_position,
                                std::optional<std::size_t> selection_anchor) {
+  cursor_position = CharacterStart(document, cursor_position);
+  if (selection_anchor) {
+    selection_anchor = CharacterStart(document, *selection_anchor);
+  }
+  const TextRange selection =
+      NormalizeSelection(cursor_position, selection_anchor, document.size());
+
   ftxui::Elements lines;
-
-  // Dont let cursor_position exceed document size
-  cursor_position = std::min(cursor_position, document.size());
-
-  const auto anchor = std::min(selection_anchor.value_or(cursor_position),
-                               document.size());
-  const auto selection_start = std::min(anchor, cursor_position);
-  const auto selection_end = std::max(anchor, cursor_position);
   std::size_t line_start = 0;
 
   // <= preserves an empty document and the blank line after a trailing newline.
   while (line_start <= document.size()) {
-    const auto newline = document.find('\n', line_start);
-    const auto line_end =
-        newline == std::string_view::npos ? document.size() : newline;
-    const auto line = document.substr(line_start, line_end - line_start);
-    // Text excludes line_end, but the cursor may sit there just before the newline.
-    const bool contains_cursor = cursor_position >= line_start &&
-                                 cursor_position <= line_end;
+    const DocumentLine line = FindLine(document, line_start);
+    lines.push_back(RenderLine(line, cursor_position, selection));
 
-    // Clip selection to this line and convert document offsets to local columns.
-    // Newline selection is separate because the newline is absent from the line text.
-    lines.push_back(RenderLine(
-        line, contains_cursor
-                  ? std::optional(cursor_position - line_start)
-                  : std::nullopt,
-        std::clamp(selection_start, line_start, line_end) - line_start,
-        std::clamp(selection_end, line_start, line_end) - line_start,
-        newline != std::string_view::npos && selection_start <= line_end &&
-            selection_end > line_end));
-
-    if (newline == std::string_view::npos) {
+    if (!line.has_newline) {
       break;
     }
-    line_start = newline + 1;
+    line_start = line.line_range.end + 1;
   }
 
   return lines;
 }
 
-ftxui::Elements RenderDocument2(std::string_view document, 
-  std::size_t cursor_position,
-  std::optional<std::size_t> selection_anchor) {
-    
-    ftxui::Elements lines;
-
-    // Doesn't let cursor_position exceed document size
-    cursor_position = std::min(cursor_position, document.size());
-
-    //TODO: figure out selection logic
-
-    std::size_t line_start_position = 0;
-    while (line_start_position <= document.size()) {
-      const size_t newline_position = document.find('\n', line_start_position);
-
-      size_t line_end_position;
-      const size_t max_size_t_value = std::string_view::npos;
-
-      if (newline_position == max_size_t_value) {
-        line_end_position = document.size();
-      } else {
-        line_end_position = newline_position;
-      }
-      
-      const size_t line_size = line_end_position - line_start_position; 
-      const auto line = document.substr(line_start_position, line_size);
-      
-      const bool line_contains_cursor = cursor_position >= line_start_position && 
-                                        cursor_position <= line_end_position;
-
-      //TODO: figure out renderLine mess
-    }
-}
-
-}  // namespace tui_demo
+} // namespace tui_demo

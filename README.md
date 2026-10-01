@@ -1,6 +1,6 @@
 # FTXUI split-screen
  
-A small C++17 terminal editor built with FTXUI.
+A small C++20 terminal editor built with FTXUI.
 
 ## Build
 

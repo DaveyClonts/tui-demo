@@ -1,0 +1,20 @@
+---
+BasedOnStyle: LLVM
+Language: Cpp
+Standard: c++20
+
+ColumnLimit: 80
+IndentWidth: 2
+ContinuationIndentWidth: 4
+UseTab: Never
+
+BreakBeforeBraces: Attach
+PointerAlignment: Left
+ReferenceAlignment: Pointer
+NamespaceIndentation: None
+FixNamespaceComments: true
+
+AllowShortFunctionsOnASingleLine: Empty
+IncludeBlocks: Preserve
+SortIncludes: CaseSensitive
+...
