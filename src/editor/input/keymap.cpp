@@ -17,6 +17,9 @@ Keymap::Keymap() {
       // Modifier 5 means Ctrl in these terminal sequences.
       {Event::Special("\x1B[1;5D"), Command::MoveWordLeft},
       {Event::Special("\x1B[1;5C"), Command::MoveWordRight},
+      // Modifier 6 means Ctrl+Shift.
+      {Event::Special("\x1B[1;6D"), Command::SelectWordLeft},
+      {Event::Special("\x1B[1;6C"), Command::SelectWordRight},
       // FTXUI 7.0.3 has no named Shift+Arrow constants. Modifier 2 means Shift;
       // A/B/C/D identify Up/Down/Right/Left in these terminal sequences.
       {Event::Special("\x1B[1;2D"), Command::SelectLeft},
@@ -42,10 +45,11 @@ void Keymap::Bind(ftxui::Event key, Command command) {
 }
 
 void Keymap::Unbind(const ftxui::Event& key) {
-  bindings_.erase(
-      std::remove_if(bindings_.begin(), bindings_.end(),
-                     [&](const KeyBinding& binding) { return binding.key == key; }),
-      bindings_.end());
+  bindings_.erase(std::remove_if(bindings_.begin(), bindings_.end(),
+                                 [&](const KeyBinding& binding) {
+                                   return binding.key == key;
+                                 }),
+                  bindings_.end());
 }
 
 std::optional<Command> Keymap::Lookup(const ftxui::Event& key) const {
@@ -60,21 +64,55 @@ std::optional<Command> Keymap::Lookup(const ftxui::Event& key) const {
 
 InputResult ExecuteCommand(Command command, Editor& editor) {
   switch (command) {
-    case Command::MoveLeft: editor.MoveLeft(); break;
-    case Command::MoveRight: editor.MoveRight(); break;
-    case Command::MoveWordLeft: editor.MoveWordLeft(); break;
-    case Command::MoveWordRight: editor.MoveWordRight(); break;
-    case Command::MoveUp: editor.MoveUp(); break;
-    case Command::MoveDown: editor.MoveDown(); break;
-    case Command::SelectLeft: editor.MoveLeft(true); break;
-    case Command::SelectRight: editor.MoveRight(true); break;
-    case Command::SelectUp: editor.MoveUp(true); break;
-    case Command::SelectDown: editor.MoveDown(true); break;
-    case Command::Backspace: editor.Backspace(); break;
-    case Command::DeleteForward: editor.Delete(); break;
-    case Command::InsertNewline: editor.InsertNewline(); break;
-    case Command::Save: return InputResult::Save;
-    case Command::Quit: return InputResult::Quit;
+  case Command::MoveLeft:
+    editor.MoveLeft();
+    break;
+  case Command::MoveRight:
+    editor.MoveRight();
+    break;
+  case Command::MoveWordLeft:
+    editor.MoveWordLeft();
+    break;
+  case Command::MoveWordRight:
+    editor.MoveWordRight();
+    break;
+  case Command::SelectWordLeft:
+    editor.MoveWordLeft(true);
+    break;
+  case Command::SelectWordRight:
+    editor.MoveWordRight(true);
+    break;
+  case Command::MoveUp:
+    editor.MoveUp();
+    break;
+  case Command::MoveDown:
+    editor.MoveDown();
+    break;
+  case Command::SelectLeft:
+    editor.MoveLeft(true);
+    break;
+  case Command::SelectRight:
+    editor.MoveRight(true);
+    break;
+  case Command::SelectUp:
+    editor.MoveUp(true);
+    break;
+  case Command::SelectDown:
+    editor.MoveDown(true);
+    break;
+  case Command::Backspace:
+    editor.Backspace();
+    break;
+  case Command::DeleteForward:
+    editor.Delete();
+    break;
+  case Command::InsertNewline:
+    editor.InsertNewline();
+    break;
+  case Command::Save:
+    return InputResult::Save;
+  case Command::Quit:
+    return InputResult::Quit;
   }
   return InputResult::Handled;
 }
@@ -88,9 +126,8 @@ InputResult HandleInput(ftxui::Event event, const Keymap& keymap,
     if (command && *command == Command::Quit) {
       return ExecuteCommand(*command, editor);
     }
-    return command || event.is_character()
-        ? InputResult::Handled
-        : InputResult::Unhandled;
+    return command || event.is_character() ? InputResult::Handled
+                                           : InputResult::Unhandled;
   }
 
   if (command) {
@@ -100,7 +137,8 @@ InputResult HandleInput(ftxui::Event event, const Keymap& keymap,
   if (event.is_mouse()) {
     const auto& mouse = event.mouse();
     if (mouse.motion == ftxui::Mouse::Released &&
-        (mouse.button == ftxui::Mouse::Left || mouse.button == ftxui::Mouse::None)) {
+        (mouse.button == ftxui::Mouse::Left ||
+         mouse.button == ftxui::Mouse::None)) {
       const bool was_selecting = input_state.mouse_selecting;
       input_state.mouse_selecting = false;
       return was_selecting ? InputResult::Handled : InputResult::Unhandled;
@@ -112,8 +150,10 @@ InputResult HandleInput(ftxui::Event event, const Keymap& keymap,
           editor.SetCursorPosition(*mouse_position, mouse.shift);
           return InputResult::Handled;
         }
-      } else if (mouse.motion == ftxui::Mouse::Moved && input_state.mouse_selecting) {
-        if (mouse_position && *mouse_position != editor.State().cursor_position) {
+      } else if (mouse.motion == ftxui::Mouse::Moved &&
+                 input_state.mouse_selecting) {
+        if (mouse_position &&
+            *mouse_position != editor.State().cursor_position) {
           editor.SetCursorPosition(*mouse_position, true);
         }
         return InputResult::Handled;
@@ -129,4 +169,4 @@ InputResult HandleInput(ftxui::Event event, const Keymap& keymap,
   return InputResult::Unhandled;
 }
 
-}  // namespace tui_demo
+} // namespace tui_demo

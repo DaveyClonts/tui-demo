@@ -1,4 +1,4 @@
-#include "commands/dispatcher.hpp"
+#include "cli/commands/dispatcher.hpp"
 
 #include <algorithm>
 #include <chrono>

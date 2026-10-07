@@ -1,6 +1,6 @@
 #pragma once
 
-#include "commands/cli.hpp"
+#include "cli/commands/cli.hpp"
 
 namespace tui_demo {
 

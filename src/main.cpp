@@ -1,5 +1,5 @@
 #include "application.hpp"
-#include "commands/cli.hpp"
+#include "cli/commands/cli.hpp"
 
 // Keep process startup separate from the terminal application and editing logic.
 int main(int argc, char* argv[]) {

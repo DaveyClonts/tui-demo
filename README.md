@@ -44,7 +44,7 @@ The first file is named `newFile.md`; if that name exists, the editor tries
 `newFile1.md`, `newFile2.md`, and so on.
 
 `--help` (or `-h`) prints usage; `open --help` describes the file argument.
-Startup argument parsing lives in `src/commands/cli.cpp`.
+Startup argument parsing lives in `src/cli/commands/cli.cpp`.
 Invalid arguments exit with code 2; file-loading errors
 print a message and exit with code 1 before entering the terminal UI. Files are
 read into memory without modifying them. Missing files are reported rather than
@@ -88,7 +88,7 @@ implemented yet. The help pane currently describes the default bindings.
 
 ## Document commands
 
-`src/commands/dispatcher.hpp` exposes commands independently of keyboard events
+`src/cli/commands/dispatcher.hpp` exposes commands independently of keyboard events
 and the terminal UI. The initial document command is `OpenCommand`:
 
 ```cpp

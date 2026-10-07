@@ -2,8 +2,8 @@
 
 #include <ftxui/component/event.hpp>
 
-#include <optional>
 #include <cstddef>
+#include <optional>
 #include <vector>
 
 namespace tui_demo {
@@ -16,6 +16,8 @@ enum class Command {
   MoveRight,
   MoveWordLeft,
   MoveWordRight,
+  SelectWordLeft,
+  SelectWordRight,
   MoveUp,
   MoveDown,
   SelectLeft,
@@ -35,21 +37,23 @@ struct KeyBinding {
 };
 
 class Keymap {
- public:
+public:
   // Start with the application's default controls.
   Keymap();
 
-  // Each key has at most one command. Binding an existing key replaces its action;
-  // multiple keys may invoke the same command. Unbind removes the old key on remap.
+  // Each key has at most one command. Binding an existing key replaces its
+  // action; multiple keys may invoke the same command. Unbind removes the old
+  // key on remap.
   void Bind(ftxui::Event key, Command command);
   void Unbind(const ftxui::Event& key);
   std::optional<Command> Lookup(const ftxui::Event& key) const;
 
- private:
+private:
   std::vector<KeyBinding> bindings_;
 };
 
-// Let the application own terminal shutdown, while input dispatch stays testable.
+// Let the application own terminal shutdown, while input dispatch stays
+// testable.
 enum class InputResult { Unhandled, Handled, Quit, Save };
 
 struct InputState {
@@ -59,8 +63,9 @@ struct InputState {
 InputResult ExecuteCommand(Command command, Editor& editor);
 
 // Explicit bindings take precedence over ordinary character insertion.
-InputResult HandleInput(ftxui::Event event, const Keymap& keymap,
-                        Editor& editor, InputState& input_state,
-                        std::optional<std::size_t> mouse_position = std::nullopt);
+InputResult
+HandleInput(ftxui::Event event, const Keymap& keymap, Editor& editor,
+            InputState& input_state,
+            std::optional<std::size_t> mouse_position = std::nullopt);
 
-}  // namespace tui_demo
+} // namespace tui_demo

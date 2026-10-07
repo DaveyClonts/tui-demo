@@ -6,7 +6,7 @@
 
 #include <iostream>
 
-#include "commands/dispatcher.hpp"
+#include "cli/commands/dispatcher.hpp"
 #include "editor/editor.hpp"
 #include "editor/input/keymap.hpp"
 #include "tui/tui.hpp"

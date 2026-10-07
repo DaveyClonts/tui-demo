@@ -2,7 +2,7 @@
 
 #include <variant>
 
-#include "commands/dispatcher.hpp"
+#include "cli/commands/dispatcher.hpp"
 
 namespace tui_demo {
 
