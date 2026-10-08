@@ -12,7 +12,7 @@
 #include <utility>
 
 #include "editor/editor.hpp"
-#include "renderer/renderer.hpp"
+#include "tui/renderer/renderer.hpp"
 #include "tui/assets.hpp"
 
 namespace tui_demo {

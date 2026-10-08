@@ -46,7 +46,7 @@ add_executable(edit_tui
   src/editor/input/keymap.cpp
   src/editor/editor.cpp
   src/tui/tui.cpp
-  src/renderer/renderer.cpp
+  src/tui/renderer/renderer.cpp
   src/main.cpp
 )
 target_compile_features(edit_tui PRIVATE cxx_std_20)

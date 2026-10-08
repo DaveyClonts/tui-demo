@@ -18,7 +18,6 @@ int RunApplication(const StartupRequest& request) {
 
   Editor editor;
   CommandDispatcher dispatcher(editor);
-  // Report startup errors before entering fullscreen so they remain visible in the shell.
   if (const auto* open = std::get_if<OpenCommand>(&request)) {
     const auto result = dispatcher.Dispatch(*open);
     if (!result.ok()) {
@@ -49,13 +48,16 @@ int RunApplication(const StartupRequest& request) {
     return BuildTui(editor, status_message, &document_layout);
   });
 
-  // Input dispatch reports quit separately so the application owns screen lifetime.
+  // Input dispatch reports quit separately so the application owns screen
+  // lifetime.
   auto app = CatchEvent(view, [&](Event event) {
-    const auto mouse_position = event.is_mouse()
-        ? document_layout.PositionAt(event.mouse().x, event.mouse().y,
-                                      editor.State().currentDoc.text)
-        : std::nullopt;
-    const auto result = HandleInput(event, keymap, editor, input_state, mouse_position);
+    const auto mouse_position =
+        event.is_mouse()
+            ? document_layout.PositionAt(event.mouse().x, event.mouse().y,
+                                         editor.State().currentDoc.text)
+            : std::nullopt;
+    const auto result =
+        HandleInput(event, keymap, editor, input_state, mouse_position);
     if (result == InputResult::Save) {
       const auto saved = dispatcher.Dispatch(SaveCommand{});
       status_message = saved.ok() ? "Saved" : "Save failed: " + saved.message;
@@ -74,4 +76,4 @@ int RunApplication(const StartupRequest& request) {
   return 0;
 }
 
-}  // namespace tui_demo
+} // namespace tui_demo
