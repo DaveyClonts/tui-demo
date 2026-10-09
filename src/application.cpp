@@ -6,52 +6,55 @@
 
 #include <iostream>
 #include <memory>
+#include <utility>
 
 #include "cli/commands/dispatcher.hpp"
-#include "editor/editor.hpp"
-#include "editor/input/keymap.hpp"
+#include "cli/parser.hpp"
 #include "tui/editor_pane.hpp"
 #include "tui/terminal_pane.hpp"
 #include "tui/tui.hpp"
 
 /*
-  Application:
+  The Application
 
-  The application
-
-  Should own lifetime details, Editor, PTY, oversee saving and exiting
-
-  Creates Editor and Terminal Panes and passes them into BuildTui
+  Owns the application state
+  Coordiantes events with application_events
+  Creates terminal and editor pane and passes them to buildTUI
+  Manages liftime
 */
 namespace tui_demo {
 
-int RunApplication(const StartupRequest& request) {
+Application::Application()
+    : dispatcher_(editor_), screen_(ftxui::ScreenInteractive::Fullscreen()) {
+  editor_pane_ = std::make_shared<EditorPane>(
+      editor_, keymap_, [this] { status_message_.clear(); });
+  terminal_pane_ = std::make_shared<TerminalPane>(
+      status_message_,
+      [this](std::string input) { SubmitCommand(std::move(input)); });
+}
+
+void Application::SubmitCommand(std::string input) {
+  const ParseResult parsed = ParseCommand(std::move(input));
+  if (!parsed.command) {
+    status_message_ = parsed.message;
+    return;
+  }
+  const CommandResult result = dispatcher_.Dispatch(*parsed.command);
+  status_message_ = result.ok() ? "Done" : result.message;
+}
+
+int Application::Run(const std::optional<CommandRequest>& request) {
   using namespace ftxui;
 
-  Editor editor;
-  CommandDispatcher dispatcher(editor);
-  if (const auto* open = std::get_if<OpenCommand>(&request)) {
-    const auto result = dispatcher.Dispatch(*open);
+  if (request) {
+    const CommandResult result = dispatcher_.Dispatch(*request);
     if (!result.ok()) {
-      std::cerr << "open " << open->path << ": " << result.message << '\n';
-      return 1;
-    }
-  } else if (const auto* create = std::get_if<NewCommand>(&request)) {
-    const auto result = dispatcher.Dispatch(*create);
-    if (!result.ok()) {
-      std::cerr << "new: " << result.message << '\n';
+      std::cerr << result.message << '\n';
       return 1;
     }
   }
 
-  auto screen = ScreenInteractive::Fullscreen();
-  Keymap keymap;
-  std::string status_message;
-  std::shared_ptr<EditorPane> editor_pane = std::make_shared<EditorPane>(
-      editor, keymap, [&] { status_message.clear(); });
-  std::shared_ptr<TerminalPane> terminal_pane =
-      std::make_shared<TerminalPane>(status_message);
-  Component panes = BuildTui(editor_pane, terminal_pane);
+  Component panes = BuildTui(editor_pane_, terminal_pane_);
 
   // Rebuild the view from current editor state whenever FTXUI draws a frame.
   Component view = Renderer(panes, [&] {
@@ -63,45 +66,18 @@ int RunApplication(const StartupRequest& request) {
     return panes->Render();
   });
 
-  // Input dispatch reports quit separately so the application owns screen
-  // lifetime.
-  Component app = CatchEvent(view, [&](Event event) {
-    const std::optional<Command> command = keymap.Lookup(event);
-    if (command == Command::Save) {
-      if (!editor.State().document_open) {
-        return true;
-      }
-      const CommandResult saved = dispatcher.Dispatch(SaveCommand{});
-      status_message = saved.ok() ? "Saved" : "Save failed: " + saved.message;
-      return true;
-    }
-    if (command == Command::Quit) {
-      screen.ExitLoopClosure()();
-      return true;
-    }
-    if (command == Command::FocusNextPane) {
-      if (editor_pane->Focused()) {
-        terminal_pane->TakeFocus();
-      } else {
-        editor_pane->TakeFocus();
-      }
-      return true;
-    }
-    if (command == Command::FocusPreviousPane) {
-      if (terminal_pane->Focused()) {
-        editor_pane->TakeFocus();
-      } else {
-        terminal_pane->TakeFocus();
-      }
-      return true;
-    }
-    return false;
-  });
+  Component app = CatchEvent(
+      view, [this](Event event) { return HandleEvent(std::move(event)); });
 
   // Process input and redraw until a Quit command invokes the exit closure.
-  screen.Loop(app);
+  screen_.Loop(app);
   std::cout << "\x1b[?1002l" << std::flush;
   return 0;
+}
+
+int RunApplication(const std::optional<CommandRequest>& request) {
+  Application application;
+  return application.Run(request);
 }
 
 } // namespace tui_demo

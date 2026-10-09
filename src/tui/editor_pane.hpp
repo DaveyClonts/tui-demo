@@ -3,7 +3,7 @@
 #include <optional>
 #include <string_view>
 #include <ftxui/component/component_base.hpp>
-#include "editor/input/keymap.hpp"
+#include "input/keymap.hpp"
 #include "tui/pane_geometry.hpp"
 
 namespace tui_demo {

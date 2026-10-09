@@ -38,12 +38,13 @@ configure_file(
 # Application wiring, editing rules, layout, and text rendering are separate units.
 add_executable(edit_tui
   src/application.cpp
-  src/cli/commands/cli.cpp
+  src/application_events.cpp
+  src/cli/parser.cpp
   src/cli/commands/dispatcher.cpp
   src/cli/commands/open.cpp
   src/cli/commands/save.cpp
   src/cli/commands/new.cpp
-  src/editor/input/keymap.cpp
+  src/input/keymap.cpp
   src/editor/editor.cpp
   src/tui/tui.cpp
   src/tui/editor_pane.cpp
