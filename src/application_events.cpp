@@ -1,7 +1,7 @@
 #include "application.hpp"
 
-#include "tui/editor_pane.hpp"
-#include "tui/terminal_pane.hpp"
+#include "tui/panes/editor_pane.hpp"
+#include "tui/panes/terminal_pane.hpp"
 
 namespace tui_demo {
 

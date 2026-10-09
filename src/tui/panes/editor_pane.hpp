@@ -4,7 +4,7 @@
 #include <string_view>
 #include <ftxui/component/component_base.hpp>
 #include "input/keymap.hpp"
-#include "tui/pane_geometry.hpp"
+#include "tui/panes/pane_geometry.hpp"
 
 namespace tui_demo {
 class Editor;

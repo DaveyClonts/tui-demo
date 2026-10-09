@@ -1,4 +1,4 @@
-#include "tui/terminal_pane.hpp"
+#include "tui/panes/terminal_pane.hpp"
 #include <filesystem>
 #include <ftxui/component/component.hpp>
 #include <ftxui/component/event.hpp>

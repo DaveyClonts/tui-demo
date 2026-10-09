@@ -47,8 +47,8 @@ add_executable(edit_tui
   src/input/keymap.cpp
   src/editor/editor.cpp
   src/tui/tui.cpp
-  src/tui/editor_pane.cpp
-  src/tui/terminal_pane.cpp
+  src/tui/panes/editor_pane.cpp
+  src/tui/panes/terminal_pane.cpp
   src/tui/renderer/document_renderer.cpp
   src/main.cpp
 )

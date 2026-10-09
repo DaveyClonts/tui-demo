@@ -1,4 +1,4 @@
-#include "tui/editor_pane.hpp"
+#include "tui/panes/editor_pane.hpp"
 
 #include <ftxui/dom/elements.hpp>
 #include <ftxui/dom/node.hpp>

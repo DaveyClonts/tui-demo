@@ -2,7 +2,7 @@
 #include <functional>
 #include <string>
 #include <ftxui/component/component_base.hpp>
-#include "tui/pane_geometry.hpp"
+#include "tui/panes/pane_geometry.hpp"
 
 namespace tui_demo {
 // Collects application commands; submission is handled by the application.
