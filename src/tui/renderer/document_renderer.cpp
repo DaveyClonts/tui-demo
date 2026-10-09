@@ -1,4 +1,4 @@
-#include "tui/renderer/renderer.hpp"
+#include "tui/renderer/document_renderer.hpp"
 
 #include <algorithm>
 #include <cstddef>
@@ -106,7 +106,7 @@ FindStyleBoundaries(std::string_view line,
 
 ftxui::Element RenderSegment(std::string_view line, TextRange segment,
                              std::optional<std::size_t> cursor_column,
-                             TextRange selection) {
+                             TextRange selection, bool show_cursor) {
   ftxui::Element element = ftxui::text(
       std::string{line.substr(segment.start, segment.end - segment.start)});
   if (segment.start >= selection.start && segment.start < selection.end) {
@@ -114,13 +114,15 @@ ftxui::Element RenderSegment(std::string_view line, TextRange segment,
               ftxui::color(ftxui::Color::White);
   }
   if (cursor_column && segment.start == *cursor_column) {
-    element = element | ftxui::focusCursorBarBlinking;
+    // Keep the scroll target when unfocused, but hide the editing cursor.
+    element = show_cursor ? element | ftxui::focusCursorBarBlinking
+                          : element | ftxui::focus;
   }
   return element;
 }
 
 ftxui::Element RenderLine(const DocumentLine& line, std::size_t cursor_position,
-                          TextRange selection) {
+                          TextRange selection, bool show_cursor) {
   const TextRange range = line.line_range;
   const bool contains_cursor =
       cursor_position >= range.start && cursor_position <= range.end;
@@ -158,7 +160,7 @@ ftxui::Element RenderLine(const DocumentLine& line, std::size_t cursor_position,
         .end = boundaries[i],
     };
     segments.push_back(
-        RenderSegment(visible, segment, cursor_column, local_selection));
+        RenderSegment(visible, segment, cursor_column, local_selection, show_cursor));
   }
   return segments.empty() ? ftxui::text("") : ftxui::hbox(std::move(segments));
 }
@@ -167,7 +169,8 @@ ftxui::Element RenderLine(const DocumentLine& line, std::size_t cursor_position,
 
 ftxui::Elements RenderDocument(std::string_view document,
                                std::size_t cursor_position,
-                               std::optional<std::size_t> selection_anchor) {
+                               std::optional<std::size_t> selection_anchor,
+                               bool show_cursor) {
   cursor_position = CharacterStart(document, cursor_position);
   if (selection_anchor) {
     selection_anchor = CharacterStart(document, *selection_anchor);
@@ -181,7 +184,7 @@ ftxui::Elements RenderDocument(std::string_view document,
   // <= preserves an empty document and the blank line after a trailing newline.
   while (line_start <= document.size()) {
     const DocumentLine line = FindLine(document, line_start);
-    lines.push_back(RenderLine(line, cursor_position, selection));
+    lines.push_back(RenderLine(line, cursor_position, selection, show_cursor));
 
     if (!line.has_newline) {
       break;

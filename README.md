@@ -66,25 +66,49 @@ created. Ctrl+S saves changes back to the opened file.
 - Typing or Enter replaces the selection.
 - Ctrl+S saves the opened file and displays success or an error in the bottom pane.
 - Esc exits.
+- Tab/Shift+Tab switch between the editor and terminal panes; clicking a pane
+  also focuses it. The terminal is currently a placeholder and starts no PTY.
 
 Shift+Arrow requires a terminal that forwards those keys to the application.
 Cursor positions currently use byte offsets, so editing multibyte Unicode is not yet supported.
 
 ## Key bindings
 
-`src/editor/input/keymap.cpp` defines the default keys and dispatches named commands to
-the editor. `application.cpp` forwards input and handles the quit result.
+`src/editor/input/keymap.cpp` defines every default keyboard shortcut. `EditorPane`
+handles document commands; `application.cpp` handles focus, save, and quit
+commands globally, regardless of the focused pane. FTXUI does not assign pane
+navigation keys.
 To customize keys in code, configure the `Keymap` after it is constructed:
 
 ```cpp
 keymap.Unbind(ftxui::Event::ArrowLeft);
 keymap.Bind(ftxui::Event::Character('h'), tui_demo::Command::MoveLeft);
+keymap.Unbind(ftxui::Event::Tab);
+keymap.Bind(ftxui::Event::CtrlN, tui_demo::Command::FocusNextPane);
 ```
 
 `Bind` replaces any existing action on that key. Omit `Unbind` to keep the old key
 as an additional shortcut. Bound characters invoke their command; unbound
 characters insert text. Configuration file loading and a remapping UI are not
 implemented yet. The help pane currently describes the default bindings.
+
+## Pane components and geometry
+
+`tui/tui.cpp` composes persistent `EditorPane` and `TerminalPane` components.
+`EditorPane` owns document hit-testing and delegates text drawing to
+`document_renderer`. The application retains the editor and pane instances.
+
+Both panes expose `const PaneGeometry& Geometry() const`:
+
+- `bounds`, `Width()`, and `Height()` describe the entire pane.
+- `content`, `Columns()`, and `Rows()` describe its usable content area,
+  excluding borders and, for an open document, the scrollbar column.
+
+Coordinates are inclusive screen-cell bounds. Geometry is empty before the
+first render and refreshed during every render, including after a resize.
+Read it on the UI thread after rendering; retain a copy if another thread
+needs a snapshot. A future PTY resize can use
+`terminal_pane->Geometry().Columns()` and `Rows()`.
 
 ## Document commands
 

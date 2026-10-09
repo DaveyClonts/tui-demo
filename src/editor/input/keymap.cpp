@@ -29,6 +29,8 @@ Keymap::Keymap() {
       {Event::Backspace, Command::Backspace},
       {Event::Delete, Command::DeleteForward},
       {Event::Return, Command::InsertNewline},
+      {Event::Tab, Command::FocusNextPane},
+      {Event::TabReverse, Command::FocusPreviousPane},
       {Event::CtrlS, Command::Save},
       {Event::Escape, Command::Quit},
   };
@@ -109,6 +111,10 @@ InputResult ExecuteCommand(Command command, Editor& editor) {
   case Command::InsertNewline:
     editor.InsertNewline();
     break;
+  case Command::FocusNextPane:
+  case Command::FocusPreviousPane:
+    // The application owns focus because it knows the complete pane tree.
+    return InputResult::Unhandled;
   case Command::Save:
     return InputResult::Save;
   case Command::Quit:

@@ -27,6 +27,8 @@ enum class Command {
   Backspace,
   DeleteForward,
   InsertNewline,
+  FocusNextPane,
+  FocusPreviousPane,
   Save,
   Quit,
 };
