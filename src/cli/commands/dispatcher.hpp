@@ -10,17 +10,21 @@ class Editor;
 
 struct OpenCommand {
   std::filesystem::path path;
-  // Callers must explicitly choose to discard edits when replacing a dirty document.
+  // Callers must explicitly choose to discard edits when replacing a dirty
+  // document.
   bool discard_changes = false;
 };
 
 // Save the current document back to its existing path.
 struct SaveCommand {};
 
-struct NewCommand{};
+struct NewCommand {};
+
+struct CloseCommand {};
 
 // Add future request types here, each with its own typed arguments and handler.
-// The dispatcher has no terminal dependency, so a CLI, prompt, or menu can use it.
+// The dispatcher has no terminal dependency, so a CLI, prompt, or menu can use
+// it.
 using CommandRequest = std::variant<OpenCommand, SaveCommand, NewCommand>;
 
 enum class CommandError {
@@ -37,19 +41,22 @@ struct CommandResult {
   CommandError error = CommandError::None;
   std::string message;
 
-  bool ok() const noexcept { return error == CommandError::None; }
+  bool ok() const noexcept {
+    return error == CommandError::None;
+  }
 };
 
 class CommandDispatcher {
- public:
+public:
   explicit CommandDispatcher(Editor& editor) : editor_(editor) {}
   CommandResult Dispatch(const CommandRequest& request);
 
- private:
+private:
   CommandResult Execute(const OpenCommand& command);
   CommandResult Execute(const SaveCommand& command);
   CommandResult Execute(const NewCommand& command);
+  CommandResult Execute(const CloseCommand& command);
   Editor& editor_;
 };
 
-}  // namespace tui_demo
+} // namespace tui_demo
